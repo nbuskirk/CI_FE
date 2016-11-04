@@ -9,12 +9,12 @@ import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 /* Components from MUI */
-import { Dialog, Tabs, Tab, Subheader, MenuItem, Drawer, LeftNav, RaisedButton, FlatButton, Divider, AppBar, IconButton, IconMenu } from 'material-ui'
+import { Dialog, Tabs, Tab, Subheader, MenuItem, Drawer, LeftNav, RaisedButton, FlatButton, Divider, AppBar, IconButton, IconMenu, Snackbar} from 'material-ui'
 import { Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn } from 'material-ui/Table';
 
 /* Icon Imports from MUI */
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
-import { NavigationClose, ActionAndroid, ActionVisibility } from 'material-ui/svg-icons';
+import { NavigationClose, ActionAndroid, ActionVisibility, ActionDelete } from 'material-ui/svg-icons';
 import {fade} from 'material-ui/utils/colorManipulator';
 import spacing from 'material-ui/styles/spacing';
 
@@ -68,7 +68,8 @@ export default class Main extends React.Component {
       dialogopen: false,
       open: false,
       modalopen: false,
-      projectData: []
+      projectData: [],
+      snackOpen: false
     };
   }
   componentDidMount(){
@@ -106,8 +107,8 @@ export default class Main extends React.Component {
       open: true,
     });
   }
-  _onRowSelection(selectedRows){
-    console.log(selectedRows)
+  onRowSelection(selectedRows){
+     console.log(selectedRows);
   }
   render() {
     const standardActions = (
@@ -125,30 +126,30 @@ export default class Main extends React.Component {
     return (
       <MuiThemeProvider muiTheme={muiTheme}>
         <div>
-          <AppBar onLeftIconButtonTouchTap={this.handleTouchTap} style={{textAlign:'center'}} title="TheCreativeIndex" /> 
+          <AppBar onLeftIconButtonTouchTap={this.handleTouchTap} style={{color:blue700}} title="TheCreativeIndex" /> 
             <Tabs>
               <Tab label="Projects">
-                <Table selectable={true} fixedHeader={true} multiSelectable={true} onRowSelection={this._onRowSelection} >
+                <Table selectable={true} fixedHeader={true} multiSelectable={true} onRowSelection={this.onRowSelection} >
                   <TableHeader enableSelectAll={true} displaySelectAll={true} adjustForCheckbox={true} >
                     <TableRow>
                       <TableHeaderColumn tooltip="Project ID">ID</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Project Title">Title</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="View Project">View</TableHeaderColumn>
+                       <TableHeaderColumn tooltip="Project Name">Name</TableHeaderColumn>
+                      <TableHeaderColumn tooltip="Project Date">Date</TableHeaderColumn>
                     </TableRow>
                   </TableHeader>
                   <TableBody showRowHover={!this.state.showRowHover} deselectOnClickaway={true} stripedRows={true}>
                     {this.state.projectData.map((row,index) => (
                       <TableRow key={index} selected={row.selected} >
                         <TableRowColumn>{row._id}</TableRowColumn>
+                        <TableRowColumn>{row.name}</TableRowColumn>
                         <TableRowColumn>{row.date}</TableRowColumn>
-                        <TableRowColumn><FlatButton label="View" onTouchTap={this.handleDialogOpen} data-index={index} icon={<ActionVisibility color={darkBlack} />} /></TableRowColumn>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table> 
               </Tab>
               <Tab label="Companies" >
-                <Table selectable={true} fixedHeader={true} multiSelectable={true} height={'750px'} >
+                <Table selectable={true} fixedHeader={true} multiSelectable={true} >
                   <TableHeader enableSelectAll={true} displaySelectAll={true} adjustForCheckbox={true} >
                     <TableRow>
                       <TableHeaderColumn tooltip="Modified Date">Modified</TableHeaderColumn>
@@ -179,7 +180,10 @@ export default class Main extends React.Component {
                   </TableFooter>
                 </Table>
               </Tab>
-            </Tabs>              
+            </Tabs>
+          <Snackbar open={this.state.snackOpen} message={<ActionVisibility color={white} />} autoHideDuration={8000} onRequestClose={this.handleRequestClose} />
+
+
           <Drawer open={this.state.open} docked={false} onRequestChange={(open) => this.setState({open})} >
             <MenuItem>About</MenuItem>
             <MenuItem>Why?</MenuItem>
