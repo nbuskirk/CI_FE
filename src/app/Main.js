@@ -7,14 +7,19 @@
 import React, {Component} from 'react';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import styles from './styles.less'
 
 /* Components from MUI */
-import { Dialog, Tabs, Tab, Subheader, MenuItem, Drawer, LeftNav, RaisedButton, FlatButton, Divider, AppBar, IconButton, IconMenu, Snackbar} from 'material-ui'
+import { Dialog, Tabs, Tab, Subheader, MenuItem, Drawer, LeftNav, RaisedButton, FlatButton, Divider, AppBar, IconButton, IconMenu, Snackbar, FloatingActionButton } from 'material-ui'
 import { Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn } from 'material-ui/Table';
+import Paper from 'material-ui/Paper';
+import AutoComplete from 'material-ui/AutoComplete';
+import TextField from 'material-ui/TextField';
+import DatePicker from 'material-ui/DatePicker';
 
 /* Icon Imports from MUI */
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
-import { NavigationClose, ActionAndroid, ActionVisibility, ActionDelete } from 'material-ui/svg-icons';
+import { NavigationClose, ActionAndroid, ActionVisibility, ActionDelete, ContentAdd, ContentRemove } from 'material-ui/svg-icons';
 import {fade} from 'material-ui/utils/colorManipulator';
 import spacing from 'material-ui/styles/spacing';
 
@@ -46,46 +51,32 @@ const muiTheme = getMuiTheme({
     checkedColor: pink700,
   }
 });
-const companyData = [
-  {
-    name: 'NRB Enterprises',
-    modified: '06/25/2013',
-    function: 'Media Group',
-    notes: 'N/A',
-    assignedto: 'Nathan Buskirk'
-  }
-]
 
 export default class Main extends React.Component {
+ 
   constructor(props, context) {
+   
     super(props, context);
+   
     this.handleRequestClose = this.handleRequestClose.bind(this);
     this.handleTouchTap = this.handleTouchTap.bind(this);
     this.handleDialogOpen = this.handleDialogOpen.bind(this);
     this.handleDialogClose = this.handleDialogClose.bind(this);
+    this.fetchData = this.fetchData.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
 
     this.state = {
       dialogopen: false,
       open: false,
       modalopen: false,
       projectData: [],
-      snackOpen: false
+      snackOpen: false,
+      dataSource: []
     };
+
   }
   componentDidMount(){
-    fetch('http://localhost:8080/project', {
-      method: 'GET'
-    })
-    .then((response) => {
-      return response.json();
-    })
-    .then((data) => {
-      this.setState({projectData: data})
-    })
-    .catch((err) => {
-      console.log(err);
-    })
-
+    this.fetchData();
   }
   handleRequestClose() {
     this.setState({
@@ -108,9 +99,53 @@ export default class Main extends React.Component {
     });
   }
   onRowSelection(selectedRows){
-     console.log(selectedRows);
+
   }
+  fetchData(){
+    fetch('http://localhost:8080/project', {
+      method: 'GET'
+    })
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      this.setState({projectData: data})
+    })
+    .catch((err) => {
+      console.log(err);
+    })
+  }
+  handleDelete(e){
+    /* This is a reducer.. or it will be. Reduce the state by 1 project and send back a new state */
+    const id = e.currentTarget.dataset.id;
+    if( confirm('Delete: '+id+' ?') ) {
+      fetch('http://localhost:8080/project/'+id, {
+        method: 'DELETE'
+      })
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        if(data.message==='Project deleted') {
+          let item = this.state.projectData.find(function(o){
+            return o._id === id
+          })
+          const index = this.state.projectData.indexOf(item);
+          this.setState({
+            projectData: this.state.projectData.filter((_,i) => i !== index)
+          })
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+    } else {
+      //do nothing
+    }
+  }
+ 
   render() {
+   
     const standardActions = (
        <MuiThemeProvider muiTheme={muiTheme}>
         <FlatButton
@@ -120,79 +155,64 @@ export default class Main extends React.Component {
         />
       </MuiThemeProvider>
     );
-    const styles = {
-      padding: '15px'
-    }
+
     return (
       <MuiThemeProvider muiTheme={muiTheme}>
         <div>
-          <AppBar onLeftIconButtonTouchTap={this.handleTouchTap} style={{color:blue700}} title="TheCreativeIndex" /> 
+          <AppBar onLeftIconButtonTouchTap={this.handleTouchTap} /> 
+            <h2 style={{background:'skyblue', margin:0, padding:'45px', color:white}}>Project List</h2>
             <Tabs>
-              <Tab label="Projects">
+              <Tab label="Create">
+                <div style={{padding:'15px', fontSize:'16px' }}>
+                 <form>
+                  <TextField id="text-field-default" defaultValue="" fullWidth={true} floatingLabelText="Project Name"/>
+                  <DatePicker hintText="Date" floatingLabelText="Date" fullWidth={true} />
+                  <TextField id="text-field-default" defaultValue="" fullWidth={true} floatingLabelText="Keywords"/>
+                  <FlatButton label="Submit" primary={true} />
+                 </form>
+                </div>
+              </Tab>
+              <Tab label="List">
                 <Table selectable={true} fixedHeader={true} multiSelectable={true} onRowSelection={this.onRowSelection} >
                   <TableHeader enableSelectAll={true} displaySelectAll={true} adjustForCheckbox={true} >
                     <TableRow>
-                      <TableHeaderColumn tooltip="Project ID">ID</TableHeaderColumn>
-                       <TableHeaderColumn tooltip="Project Name">Name</TableHeaderColumn>
+                      <TableHeaderColumn tooltip="Project Name">Name</TableHeaderColumn>
+                      <TableHeaderColumn tooltip="Project ID">ID</TableHeaderColumn>                     
                       <TableHeaderColumn tooltip="Project Date">Date</TableHeaderColumn>
                     </TableRow>
                   </TableHeader>
                   <TableBody showRowHover={!this.state.showRowHover} deselectOnClickaway={true} stripedRows={true}>
                     {this.state.projectData.map((row,index) => (
-                      <TableRow key={index} selected={row.selected} >
-                        <TableRowColumn>{row._id}</TableRowColumn>
-                        <TableRowColumn>{row.name}</TableRowColumn>
-                        <TableRowColumn>{row.date}</TableRowColumn>
-                      </TableRow>
+                        <TableRow key={index} selected={row.selected} >
+                          <TableRowColumn><a href="#">{row.name}</a></TableRowColumn>
+                          <TableRowColumn>{row._id}</TableRowColumn>
+                          <TableRowColumn>{row.date}</TableRowColumn>
+                        </TableRow>
                     ))}
                   </TableBody>
                 </Table> 
               </Tab>
-              <Tab label="Companies" >
-                <Table selectable={true} fixedHeader={true} multiSelectable={true} >
-                  <TableHeader enableSelectAll={true} displaySelectAll={true} adjustForCheckbox={true} >
-                    <TableRow>
-                      <TableHeaderColumn tooltip="Modified Date">Modified</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Company Name">Company</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Business Function">Function</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Notes">Notes</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Assigned To">Assigned to</TableHeaderColumn>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody showRowHover={!this.state.showRowHover} deselectOnClickaway={true} stripedRows={true}>
-                    {companyData.map((row,index) => (
-                      <TableRow key={index} selected={row.selected}>
-                        <TableRowColumn>{row.modified}</TableRowColumn>
-                        <TableRowColumn>{row.name}</TableRowColumn>
-                        <TableRowColumn>{row.function}</TableRowColumn>
-                        <TableRowColumn>{row.notes}</TableRowColumn>
-                        <TableRowColumn>{row.assignedto}</TableRowColumn>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                      <TableHeaderColumn tooltip="Modified Date">Modified</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Project Name">Project</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Project Status">Status</TableHeaderColumn>
-                      <TableHeaderColumn tooltip="Assigned To">Assigned to</TableHeaderColumn>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+              <Tab label="Contact" >
+                 <div style={{width:'70%', margin:'auto', padding:'15px', fontSize:'16px'}}>
+                  <p>contact info.</p>
+                </div>
               </Tab>
             </Tabs>
-          <Snackbar open={this.state.snackOpen} message={<ActionVisibility color={white} />} autoHideDuration={8000} onRequestClose={this.handleRequestClose} />
-
-
+          <Snackbar open={this.state.snackOpen} message="test" autoHideDuration={8000} onRequestClose={this.handleRequestClose} />
           <Drawer open={this.state.open} docked={false} onRequestChange={(open) => this.setState({open})} >
-            <MenuItem>About</MenuItem>
-            <MenuItem>Why?</MenuItem>
-            <MenuItem>Pricing & Sign Up</MenuItem>
-            <MenuItem>Contact Us</MenuItem>
+             <Subheader>Navigation</Subheader>
+             <Divider />
+            <MenuItem>Create / New</MenuItem>
+            <MenuItem>Read / List</MenuItem>
+            <MenuItem>Update / Edit</MenuItem>
           </Drawer>
           <Dialog title="Company Details" open={this.state.dialogopen} modal={false} onRequestClose={this.handleDialogClose} >
-            <p>compknee details here!</p>
+            <p>project details here!</p>
           </Dialog>
+          <div style={{textAlign:'center'}} >
+            <Divider />
+            <p style={{color:grey500, fontSize:'12px'}}>made with: es6/js, react, webpack, npm, material ui</p>
+          </div>
         </div>
       </MuiThemeProvider>
     );
