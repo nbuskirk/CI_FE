@@ -10,45 +10,35 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import styles from './styles.less'
 
 /* Components from MUI */
-import { Dialog, Tabs, Tab, Subheader, MenuItem, Drawer, LeftNav, RaisedButton, FlatButton, Divider, AppBar, IconButton, IconMenu, Snackbar, FloatingActionButton } from 'material-ui'
+import { Dialog, Tabs, Tab, Subheader, MenuItem, Drawer, LeftNav, FlatButton, Divider, AppBar, IconButton, IconMenu, Snackbar } from 'material-ui'
 import { Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn } from 'material-ui/Table';
-import Paper from 'material-ui/Paper';
-import AutoComplete from 'material-ui/AutoComplete';
-import TextField from 'material-ui/TextField';
-import DatePicker from 'material-ui/DatePicker';
 
 /* Icon Imports from MUI */
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
-import { NavigationClose, ActionAndroid, ActionVisibility, ActionDelete, ContentAdd, ContentRemove } from 'material-ui/svg-icons';
 import {fade} from 'material-ui/utils/colorManipulator';
 import spacing from 'material-ui/styles/spacing';
 
 /* Theme definitons for app / overrides */
-import { 
-  cyan500, blue500, grey100, grey500, blue100, blue700, purple100, darkBlack, 
-  fullBlack, pink500, pink700, pinkA200, deepPurple500, white, grey300, indigoA100 
+import {
+  grey100, grey400, grey700, grey900,
+  purple100, purpleA100, pinkA700, darkBlack, fullBlack, white, blueA700, pink400, pink100, indigo900,
 } from 'material-ui/styles/colors';
 
 const muiTheme = getMuiTheme({
   palette: {
-    primary1Color: blue700,
-    primary2Color: blue700,
-    primary3Color: blue700,
-    accent1Color: pinkA200,
-    accent2Color: grey100,
-    accent3Color: grey500,
-    textColor: darkBlack,
+    primary1Color: grey900,
+    accent1Color: pink400,
+    accent2Color: pink400,
+    accent3Color: pink400,
+    textColor: grey900,
     alternateTextColor: white,
-    canvasColor: white,
-    borderColor: grey300,
     disabledColor: fade(darkBlack, 0.3),
-    pickerHeaderColor: grey500,
-    clockCircleColor: fade(darkBlack, 0.07),
+    pickerHeaderColor: grey900,
     shadowColor: fullBlack
   },
   checkbox: {
-    boxColor: pink500,
-    checkedColor: pink700,
+    //boxColor: pinkA700,
+    //checkedColor: purple100,
   }
 });
 
@@ -64,6 +54,7 @@ export default class Main extends React.Component {
     this.handleDialogClose = this.handleDialogClose.bind(this);
     this.fetchData = this.fetchData.bind(this);
     this.handleDelete = this.handleDelete.bind(this);
+   
 
     this.state = {
       dialogopen: false,
@@ -71,7 +62,11 @@ export default class Main extends React.Component {
       modalopen: false,
       projectData: [],
       snackOpen: false,
-      dataSource: []
+      dataSource: [],
+      modalData: {
+        title: 'test',
+        date: 'no'
+      }
     };
 
   }
@@ -83,7 +78,7 @@ export default class Main extends React.Component {
       open: false,
     });
   }
-  handleDialogOpen(event){
+  handleDialogOpen(id){
     this.setState({
       dialogopen: true
     })
@@ -99,7 +94,7 @@ export default class Main extends React.Component {
     });
   }
   onRowSelection(selectedRows){
-
+    
   }
   fetchData(){
     fetch('http://localhost:8080/project', {
@@ -113,6 +108,17 @@ export default class Main extends React.Component {
     })
     .catch((err) => {
       console.log(err);
+    })
+  }
+  fetchModalData(id){
+    fetch('http://localhost:8080/project/'+id, {
+      method: 'GET'
+    })
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      return data;
     })
   }
   handleDelete(e){
@@ -156,22 +162,21 @@ export default class Main extends React.Component {
       </MuiThemeProvider>
     );
 
+    const styles = {
+      margin: 0,
+      padding: '45px 25px',
+      background: pink100
+    }
+
     return (
       <MuiThemeProvider muiTheme={muiTheme}>
         <div>
           <AppBar onLeftIconButtonTouchTap={this.handleTouchTap} /> 
-            <h2 style={{background:'skyblue', margin:0, padding:'45px', color:white}}>Project List</h2>
+            <div style={styles}>
+              <h2>Project List</h2>
+              <p>This can be any subtext, or a sub-heading</p>
+            </div>
             <Tabs>
-              <Tab label="Create">
-                <div style={{padding:'15px', fontSize:'16px' }}>
-                 <form>
-                  <TextField id="text-field-default" defaultValue="" fullWidth={true} floatingLabelText="Project Name"/>
-                  <DatePicker hintText="Date" floatingLabelText="Date" fullWidth={true} />
-                  <TextField id="text-field-default" defaultValue="" fullWidth={true} floatingLabelText="Keywords"/>
-                  <FlatButton label="Submit" primary={true} />
-                 </form>
-                </div>
-              </Tab>
               <Tab label="List">
                 <Table selectable={true} fixedHeader={true} multiSelectable={true} onRowSelection={this.onRowSelection} >
                   <TableHeader enableSelectAll={true} displaySelectAll={true} adjustForCheckbox={true} >
@@ -184,7 +189,7 @@ export default class Main extends React.Component {
                   <TableBody showRowHover={!this.state.showRowHover} deselectOnClickaway={true} stripedRows={true}>
                     {this.state.projectData.map((row,index) => (
                         <TableRow key={index} selected={row.selected} >
-                          <TableRowColumn><a href="#">{row.name}</a></TableRowColumn>
+                          <TableRowColumn><a href="#" data-id={row._id} onClick={this.handleDialogOpen(row._id)}>{row.name}</a></TableRowColumn>
                           <TableRowColumn>{row._id}</TableRowColumn>
                           <TableRowColumn>{row.date}</TableRowColumn>
                         </TableRow>
@@ -207,11 +212,10 @@ export default class Main extends React.Component {
             <MenuItem>Update / Edit</MenuItem>
           </Drawer>
           <Dialog title="Company Details" open={this.state.dialogopen} modal={false} onRequestClose={this.handleDialogClose} >
-            <p>project details here!</p>
+            <p>{this.state.modalData.title}</p>
           </Dialog>
-          <div style={{textAlign:'center'}} >
-            <Divider />
-            <p style={{color:grey500, fontSize:'12px'}}>made with: es6/js, react, webpack, npm, material ui</p>
+          <div style={{marginTop:'5px', textAlign:'center'}} >
+            <p>featured footer text here</p>
           </div>
         </div>
       </MuiThemeProvider>
